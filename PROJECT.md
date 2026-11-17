@@ -17,7 +17,8 @@ Arabic party-games app for friends. The host creates a room → 4-digit code →
   - Security audit run 1: `C:\Users\Majesty\security-audit-skill\party_games_app\run-1\` (read `REPORT.md`).
   - `app/`: Expo SDK 58 app (own nested git repo from create-expo-app). `App.tsx` picks the screen from server state; `src/net.ts` socket; `src/ui.tsx` look; `src/screens.tsx` Home/Waiting/Lobby/HowTo; `src/Outsider.tsx` برا السالفة; `src/content.ts` game list + how-to text; `public/` iPhone home-screen manifest/icons.
   - `scripts/make_icon.py`: draws the Sadu icon into app/assets + app/public.
-- No GitHub repo, server, or domain yet.
+- GitHub: https://github.com/mohasameh793-arch/sahra-party-games (PRIVATE for now), branches `main` and `six-games` (same commit). User wants it public + GitHub Pages for the app; blocked on rewriting the first commit's author email (personal Gmail) before going public.
+- Game server host (planned): Oracle VM `whatsapp-agent` 158.101.253.75 (1 GB, Ubuntu 24.04), `ssh -i ~/.ssh/oracle_wa ubuntu@158.101.253.75`. Needs Node + Caddy (HTTPS via 158-101-253-75.sslip.io, no domain) and ports 80/443 opened in Oracle's security list (console) + iptables. Don't touch the WhatsApp services there.
 
 ## 3. Stack & services
 - Expo / React Native (one codebase → Android APK + web for iPhone), socket.io-client, AsyncStorage (session token), expo-localization (forced RTL), fonts Reem Kufi (headings) + IBM Plex Sans Arabic (UI).

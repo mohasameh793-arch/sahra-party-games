@@ -149,4 +149,4 @@ setInterval(() => {
   hits.clear();
 }, 60_000).unref();
 
-http.listen(PORT, () => console.log(`party server on :${PORT}`));
+http.listen(PORT, process.env.HOST || undefined, () => console.log(`party server on ${process.env.HOST || "*"}:${PORT}`));

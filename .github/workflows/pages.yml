@@ -1,0 +1,29 @@
+name: Deploy app to GitHub Pages
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency: { group: pages, cancel-in-progress: true }
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: { name: github-pages, url: "${{ steps.d.outputs.page_url }}" }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: app/package-lock.json }
+      - run: npm ci
+        working-directory: app
+      - run: npx expo export -p web && touch dist/.nojekyll
+        working-directory: app
+        env:
+          EXPO_BASE_URL: /sahra-party-games
+          EXPO_PUBLIC_SERVER_URL: https://158-101-253-75.sslip.io
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: app/dist }
+      - id: d
+        uses: actions/deploy-pages@v4
