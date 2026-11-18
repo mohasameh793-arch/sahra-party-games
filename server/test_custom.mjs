@@ -29,6 +29,8 @@ assert.equal(C.findDuplicate({ name: "Werewolf", aliases: [] }), "الذيب");
 assert.equal(C.findDuplicate({ name: "شي ثاني", aliases: ["المافيا"] }), "المافيا");
 assert.equal(C.findDuplicate({ name: "تحدي", aliases: [] }), "تحدي", "existing custom game");
 assert.equal(C.findDuplicate({ name: "لعبة جديدة تماما", aliases: ["brand new"] }), null);
+assert.equal(C.findDuplicate({ name: "اسم ثاني", aliases: [], sameAs: "المافيا" }), "المافيا", "AI says same game");
+assert.equal(C.findDuplicate({ name: "اسم ثالث", aliases: [], sameAs: "شي مو موجود" }), null, "unknown sameAs ignored");
 assert.equal((await C.submit({ url: "https://evil.com/x", category: "saudi", ip: "t" })).error.includes("يوتيوب"), true);
 assert.match((await C.submit({ url: "https://youtu.be/AAAAAAAAAAA", category: "saudi", ip: "t" })).error ?? "", /.+/); // no key in tests → fails safely
 assert.match((await C.submit({ url: "https://www.youtube.com/watch?v=roles123456", category: "saudi", ip: "t2" })).error ?? "", /.+/);

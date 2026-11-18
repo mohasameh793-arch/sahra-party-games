@@ -25,7 +25,7 @@ function save() {
 
 // Built-in games and the other names they go by, for the duplicate check.
 const BUILTIN = {
-  "برا السالفة": ["برا السالفة", "مين برا السالفة", "imposter", "impostor", "spyfall", "سباي فول", "الجاسوس", "outsider"],
+  "برا السالفة": ["برا السالفة", "مين برا السالفة", "imposter", "impostor", "spyfall", "سباي فول", "الجاسوس", "outsider", "chameleon", "the chameleon", "الحرباء", "الكاميليون"],
   "الذيب": ["الذيب", "werewolf", "werewolves", "المستذئب", "الذئب", "ذيب"],
   "المافيا": ["المافيا", "mafia", "مافيا"],
   "سين جيم": ["سين جيم", "jeopardy", "seen jeem"],
@@ -38,6 +38,7 @@ const key = (s) => norm(String(s).toLowerCase());
 
 /** Name of an existing game this definition duplicates, or null. */
 export function findDuplicate(def) {
+  if (def.sameAs && existingNames().includes(def.sameAs)) return def.sameAs; // the AI recognised an existing game
   const mine = new Set([def.name, ...(def.aliases || [])].map(key).filter(Boolean));
   for (const [name, aliases] of Object.entries(BUILTIN)) if (aliases.some((a) => mine.has(key(a)))) return name;
   for (const gm of store.games) if ([gm.def.name, ...(gm.def.aliases || [])].some((a) => mine.has(key(a)))) return gm.def.name;
@@ -54,6 +55,9 @@ let day = { date: "", count: 0 };
 const inflight = new Set();
 
 /** Full pipeline for one submitted link. Resolves {ok, game} or {error}. Never throws for user input. */
+/** Names the AI compares the video against (same game under another name = duplicate). */
+export const existingNames = () => [...Object.keys(BUILTIN), ...store.games.map((g) => g.def.name)];
+
 export async function submit({ url, category, ip }) {
   const link = parseVideoLink(url);
   if (!link) return { error: "حط رابط فيديو من يوتيوب، انستقرام، تيك توك، X، فيسبوك أو سناب" };
@@ -80,7 +84,7 @@ export async function submit({ url, category, ip }) {
       if (d.error) return { error: d.error };
       source = d;
     }
-    const r = await AI.analyze(source, category);
+    const r = await AI.analyze(source, category, existingNames());
     if (!r.ok) {
       if (!/مشغولة/.test(r.reason)) { store.rejected[videoId] = r.reason; save(); }
       return { error: r.reason };
