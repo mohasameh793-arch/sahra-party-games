@@ -6,6 +6,7 @@ Arabic party-games app for friends. The host creates a room → 4-digit code →
 - Arabic only (Saudi dialect in Saudi games, Egyptian in Egyptian games). Built-in voice for "everyone at home" mode is planned (not built).
 - **Works now (6 of 8 games):** rooms, code, join requests, accept/reject/kick, host hand-over, reconnect after refresh, how-to cards for all 8 games; playable (all 8): **برا السالفة**, **الذيب**, **حزورة**, **المافيا**, **سين جيم** (Saudi) and **أتوبيس كومبليت**, **صراحة**, **كلمة سر** (Egyptian).
 - **LIVE:** https://mohasameh793-arch.github.io/sahra-party-games/ (app, GitHub Pages) → game server https://158-101-253-75.sslip.io (Oracle). Full game verified over the internet 2026-11-18.
+- **سوّ لعبتك (video → game):** at the end of both categories a player pastes a video link (YouTube, Instagram, TikTok, X, Facebook, Snapchat). The Oracle server has Gemini watch it, turns the rules into a playable game (roles / secret word / prompt cards / trivia) and adds it for everyone. Same game under another name → "اللعبة موجودة باسم «X»". Verified live 2026-11-19.
 - **Not done:** voice for "everyone at home" mode.
 
 ## 2. Where everything lives
@@ -15,11 +16,13 @@ Arabic party-games app for friends. The host creates a room → 4-digit code →
   - `app/src/Night.tsx`: المافيا + الذيب screens (one file, dialect text from `TALK` in content.ts). `Hazzoura.tsx`, `Autobus.tsx`, `Saraha.tsx`: the other games. `ui.tsx` has `useCountdown` (server sends msLeft, phone counts locally) and `GameTop`.
   - `server/hazzoura.js` (riddles 3/2/1), `server/autobus.js` (letter, STOP, thumbs-down review, 10/5/0), `server/saraha.js` (anonymous answers, host check), `server/arabic.js` (answer normalisation); riddles + صراحة questions in `words.js`.
   - `server/test_socket.mjs`: starts the real server and checks the security-audit fixes.
+  - `server/ai.js` (Gemini call + strict output validation), `server/videolink.js` (allow-listed links + yt-dlp download), `server/customgame.js` (store `server/data/custom-games.json`, duplicates, limits, generic engine), `app/src/Custom.tsx`, `server/test_custom.mjs`.
+  - Security audit run 2 (video feature): `C:\Users\Majesty\security-audit-skill\party_games_app\run-2\REPORT.md`.
   - Security audit run 1: `C:\Users\Majesty\security-audit-skill\party_games_app\run-1\` (read `REPORT.md`).
   - `app/`: Expo SDK 58 app (own nested git repo from create-expo-app). `App.tsx` picks the screen from server state; `src/net.ts` socket; `src/ui.tsx` look; `src/screens.tsx` Home/Waiting/Lobby/HowTo; `src/Outsider.tsx` برا السالفة; `src/content.ts` game list + how-to text; `public/` iPhone home-screen manifest/icons.
   - `scripts/make_icon.py`: draws the Sadu icon into app/assets + app/public.
-- GitHub: https://github.com/mohasameh793-arch/sahra-party-games (PRIVATE for now), branches `main` and `six-games` (same commit). User wants it public + GitHub Pages for the app; blocked on rewriting the first commit's author email (personal Gmail) before going public.
-- Game server host (planned): Oracle VM `whatsapp-agent` 158.101.253.75 (1 GB, Ubuntu 24.04), `ssh -i ~/.ssh/oracle_wa ubuntu@158.101.253.75`. Needs Node + Caddy (HTTPS via 158-101-253-75.sslip.io, no domain) and ports 80/443 opened in Oracle's security list (console) + iptables. Don't touch the WhatsApp services there.
+- GitHub: https://github.com/mohasameh793-arch/sahra-party-games (PUBLIC); pushing `main` deploys the app to GitHub Pages (`.github/workflows/pages.yml`).
+- Game server: systemd `sahra-game` (127.0.0.1:3005, Caddy in front) in `/home/ubuntu/sahra/server`; Gemini key in `/home/ubuntu/sahra/.env.gemini` (chmod 600, `EnvironmentFile=`); yt-dlp at `/home/ubuntu/bin/yt-dlp` (checksum-verified); `IPAddressDeny=169.254.0.0/16` blocks the cloud metadata service. Oracle VM `whatsapp-agent` 158.101.253.75 (1 GB, Ubuntu 24.04), `ssh -i ~/.ssh/oracle_wa ubuntu@158.101.253.75`. Needs Node + Caddy (HTTPS via 158-101-253-75.sslip.io, no domain) and ports 80/443 opened in Oracle's security list (console) + iptables. Don't touch the WhatsApp services there.
 
 ## 3. Stack & services
 - Expo / React Native (one codebase → Android APK + web for iPhone), socket.io-client, AsyncStorage (session token), expo-localization (forced RTL), fonts Reem Kufi (headings) + IBM Plex Sans Arabic (UI).
@@ -34,7 +37,7 @@ Easy way (local test):
 4. Check rules: `cd server && npm test`
 Build the iPhone/web version: `cd app && npx expo export -p web` → `app/dist`, served by the game server at http://localhost:3005.
 Hard way: same commands one by one; server reads `PORT` env; native app reads `EXPO_PUBLIC_NATIVE_SERVER_URL`.
-Deploy: not done yet.
+Deploy server: `tar --force-local --exclude=node_modules --exclude=server/data -czf x.tgz server`, scp to `/tmp`, on the VM `cd ~/sahra && tar -xzf /tmp/x.tgz && sudo systemctl restart sahra-game`. One file: scp it to `sahra/server/` + restart. App: `git push origin main`. APK: see the 2026-11-18 log entry.
 
 ## 5. Decisions & gotchas
 - **Own Node server instead of Supabase** (changed during the build): roles and secrets must be decided on the server and sent one player at a time; a small socket.io server does this directly and needs no account. `view(room, player)` is the only thing sent to a phone.
@@ -47,6 +50,8 @@ Deploy: not done yet.
 - Mafia/Wolf rules: mafia = mafia/doctor/detective/citizen (detective sees mafia or not); wolf = wolf/guard/seer/hunter(7+ players)/villager (seer sees the exact role). Protector can't pick the same person two nights running (self allowed). Wolves' split picks → random among the most-picked. Tie vote → nobody out. Dead players' roles are public. Winners' team +1 point.
 - At night EVERY phone shows the same full list of the living (a wolf's shorter list leaked them); taps a role can't make are ignored silently. Non-acting roles pick locally only.
 - Host escape hatches: "كمّل الليل", "سكّر التصويت", "كمّل بدون رمية" unblock a phase stuck on a player who left.
+- Video games: Gemini chain `gemini-3.5-flash` (tried twice) → `gemini-2.5-flash` → `gemini-3.5-flash-lite` → `gemini-3.1-flash-lite`; 110 s per call, 200 s total, after a timeout only lite models. `gemini-flash-latest` hangs under load; `gemini-2.5-flash-lite` is closed to new users (404). Duplicates = name/aliases + the AI gets the list of existing games and fills `sameAs`. Limits: 3/hour per IP, 40/day, 300 games.
+- APK build: `app/android/local.properties` must use forward slashes (`sdk.dir=C:/Users/...`); backslashes break Gradle with "filename, directory name, or volume label syntax is incorrect". Also keep `rootProject.name = 'sahra'` in settings.gradle after a prebuild.
 - Metro (Expo dev server) on this PC does NOT pick up file edits: restart it with `--clear` after changing app code. `TaskStop` on the npx wrapper leaves node holding port 8081; kill the `expo start` node process.
 
 ## 6. Log
@@ -78,3 +83,6 @@ User: Mafia is a Saudi game, not Egyptian. Moved it to the Saudi category (conte
 `server/seenjeem.js` (2 teams via `splitTeams`, board 6 of 8 categories × 200/400/600 from `SEENJEEM` in words.js, pick (+الحفرة), helpers friend +30 s / two answers, pass = steal, answer reaches phones only after reveal, host judges turn/other/none, pit subtracts from the other team) and `server/kelmaser.js` (2 teams, one giver per team sees the word, rotating givers, clue n = 11-n points, miss/foul pass the turn, first to 50). Screens `SeenJeem.tsx`, `KelmaSer.tsx`. Self-checks added; full games played with bots. Deployed to Oracle + Pages.
 ### 2026-11-18 — Android APK
 `npx expo prebuild -p android` (android/ is git-ignored, regenerated) → `android/local.properties` sdk.dir → `gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a` with JAVA_HOME = JDK 21 (`C:/Program Files/Microsoft/jdk-21.0.11.10-hotspot`), ANDROID_HOME = `%LOCALAPPDATA%/Android/Sdk`, EXPO_PUBLIC_NATIVE_SERVER_URL=https://158-101-253-75.sslip.io. Release is signed with the template's debug key (fine for sideloading, not for Play Store). Log: `out/gradle_build.log`.
+
+### 2026-11-19 — سوّ لعبتك (video → game) live
+Video-link game maker added (server ai.js/videolink.js/customgame.js, app Custom.tsx + MakeGame card). Security audit run 2 (High fixed: 'end' during how-to crashed the server; YouTube length bound, listCustom rate limit, accepted-players-only submit) and open-code-review fixes (secret-word leak, timeouts). Deployed to Oracle with key file, yt-dlp and metadata block. Gemini was overloaded (503): added retry, model chain, time budget and AI duplicate matching. APK rebuilt after fixing local.properties.
