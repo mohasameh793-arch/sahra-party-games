@@ -13,3 +13,10 @@ export const shuffle = (a) => {
 
 export class GameError extends Error {}
 export const fail = (msg) => { throw new GameError(msg); };
+
+/** Splits players into two shuffled teams "a" and "b" (a gets the extra one). */
+export const splitTeams = (ids) => {
+  const s = shuffle(ids);
+  const half = Math.ceil(s.length / 2);
+  return { a: s.slice(0, half), b: s.slice(half) };
+};

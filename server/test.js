@@ -13,7 +13,7 @@ assert.throws(() => L.decide(room, a, b.id, true), /للمضيف/);
 for (const p of [a, b, c]) L.decide(room, host, p.id, true);
 assert.equal(room.players.length, 4);
 
-assert.throws(() => L.chooseGame(room, host, "seenjeem"), /قريباً/);
+
 L.chooseGame(room, host, "outsider");
 for (const p of room.players) L.understood(room, p);
 const g = room.game;
@@ -190,6 +190,52 @@ function quick(gameId, n) {
   L.gameAction(room, h, { type: "hide", index: hideIdx });
   L.gameAction(room, h, { type: "show" });
   assert.deepEqual(L.view(room, ps[1]).game.list.sort(), ["سر0", "سر1"]);
+}
+
+// ---------- سين جيم / كلمة سر ----------
+{ // سين جيم: answer hidden until reveal, pit, steal, turns alternate
+  const { room, h, ps } = quick("seenjeem", 4);
+  const g = room.game;
+  assert.equal(g.teams.a.length + g.teams.b.length, 4);
+  const byTeam = (t) => ps.filter((p) => g.teams[t].includes(p.id));
+  const A = byTeam("a"), B = byTeam("b");
+  assert.throws(() => L.gameAction(room, B[0], { type: "pick", col: 0, row: 0 }), /دور/);
+  L.gameAction(room, A[0], { type: "pick", col: 0, row: 2, pit: true });
+  const ans = g.board[0].cells[2].a;
+  assert.ok(!JSON.stringify(L.view(room, A[0]).game).includes('"a":"' + ans), "answer hidden before reveal");
+  L.gameAction(room, A[0], { type: "reveal" });
+  assert.equal(L.view(room, B[0]).game.cur.a, ans);
+  const judge = room.players.find((p) => p.id === room.hostId);
+  L.gameAction(room, judge, { type: "judge", winner: "turn" });
+  assert.deepEqual(g.points, { a: 600, b: -600 }, "pit takes the points from the other team");
+  assert.equal(g.turn, "b");
+  L.gameAction(room, B[0], { type: "pick", col: 1, row: 0 });
+  L.gameAction(room, B[0], { type: "pass" });
+  L.gameAction(room, A[0], { type: "reveal" });
+  L.gameAction(room, judge, { type: "judge", winner: "other" });
+  assert.equal(g.points.a, 800, "steal goes to the other team");
+  assert.throws(() => L.gameAction(room, A[0], { type: "pick", col: 1, row: 0 }), /سؤال ثاني|دور/);
+}
+
+{ // كلمة سر: only givers see the word, points 10 → 9, foul by other team only
+  const { room, h, ps } = quick("kelmaser", 4);
+  const g = room.game;
+  const word = g.words[g.index];
+  const givers = Object.values(g.givers);
+  for (const p of ps) {
+    const v = JSON.stringify(L.view(room, p).game);
+    assert.equal(v.includes(word), givers.includes(p.id), "only the two clue givers see the word");
+  }
+  const active = g.active, act = ps.find((p) => p.id === g.givers[active]);
+  const otherGiver = ps.find((p) => p.id === g.givers[active === "a" ? "b" : "a"]);
+  assert.throws(() => L.gameAction(room, otherGiver, { type: "got" }), /الإشارة/);
+  const opp = ps.find((p) => !g.teams[active].includes(p.id));
+  L.gameAction(room, opp, { type: "foul" });
+  assert.equal(g.clues, 2);
+  assert.notEqual(g.active, active);
+  L.gameAction(room, otherGiver, { type: "got" });
+  assert.equal(g.last.pts, 9);
+  assert.equal(g.phase, "between");
 }
 
 console.log("all checks passed");

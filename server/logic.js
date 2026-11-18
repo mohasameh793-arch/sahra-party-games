@@ -6,9 +6,11 @@ import * as Night from "./nightgame.js";
 import * as Hazzoura from "./hazzoura.js";
 import * as Autobus from "./autobus.js";
 import * as Saraha from "./saraha.js";
+import * as SeenJeem from "./seenjeem.js";
+import * as KelmaSer from "./kelmaser.js";
 
 // Every game except برا السالفة is a module with start(g), step(room, p, action, isHost), view(g, p, isHost).
-const IMPL = { mafia: Night, dheeb: Night, hazzoura: Hazzoura, autobus: Autobus, saraha: Saraha };
+const IMPL = { mafia: Night, dheeb: Night, hazzoura: Hazzoura, autobus: Autobus, saraha: Saraha, seenjeem: SeenJeem, kelmaser: KelmaSer };
 
 export { GameError };
 export const MAX_PLAYERS = 20;
@@ -98,11 +100,11 @@ export function kick(room, host, targetId) {
 export const GAMES = {
   outsider: { category: "saudi", min: 3, ready: true },
   dheeb: { category: "saudi", min: 5, ready: true },
-  seenjeem: { category: "saudi", min: 2, ready: false },
+  seenjeem: { category: "saudi", min: 2, ready: true },
   hazzoura: { category: "saudi", min: 2, ready: true },
   mafia: { category: "saudi", min: 5, ready: true },
   autobus: { category: "egypt", min: 2, ready: true },
-  kelmaser: { category: "egypt", min: 4, ready: false },
+  kelmaser: { category: "egypt", min: 4, ready: true },
   saraha: { category: "egypt", min: 3, ready: true },
 };
 

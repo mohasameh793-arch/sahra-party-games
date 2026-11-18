@@ -26,6 +26,11 @@ for (let i = Number(skip); i < Number(skip) + Number(count); i++) {
     if (g.gameId === "hazzoura" && g.phase === "ask" && !g.answered.includes(me)) later("action", { type: "answer", text: ["مشط", "قلم", "ما أدري", "باب"][Math.floor(Math.random() * 4)] });
     if (g.gameId === "autobus" && g.phase === "write" && !g.mine) later("action", { type: "save", answers: Object.fromEntries(g.cats.map((c, k) => [c, k % 3 ? g.letter + "ـ" + name.slice(0, 2) + k : ""])) });
     if (g.gameId === "saraha" && g.phase === "answer" && g.mine === null) later("action", { type: "answer", value: g.kind === "pick" ? pick(g.ids) : `${name} يقول: بصراحة مش عارف` });
+    if (g.gameId === "seenjeem" && g.myTeam === g.turn) {
+      if (g.phase === "board") { const cells = g.board.flatMap((c, col) => c.cells.map((x, row) => (!x.used ? { col, row } : null))).filter(Boolean); if (cells.length) later("action", { type: "pick", ...pick(cells) }); }
+      if (g.phase === "question") later("action", { type: "reveal" });
+    }
+    if (g.gameId === "kelmaser" && g.phase === "play" && g.givers[g.active] === me) later("action", { type: Math.random() < 0.5 ? "got" : "miss" });
     if (g.gameId !== "outsider") return;
     if (g.phase === "questions" && g.turn.asker === st.you.id) later("action", { type: "nextTurn" });
     if (g.phase === "vote" && !g.myVote) later("action", { type: "vote", targetId: g.ids.find((x) => x !== st.you.id) });
