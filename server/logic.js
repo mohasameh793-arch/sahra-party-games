@@ -8,9 +8,10 @@ import * as Autobus from "./autobus.js";
 import * as Saraha from "./saraha.js";
 import * as SeenJeem from "./seenjeem.js";
 import * as KelmaSer from "./kelmaser.js";
+import * as Custom from "./customgame.js";
 
 // Every game except برا السالفة is a module with start(g), step(room, p, action, isHost), view(g, p, isHost).
-const IMPL = { mafia: Night, dheeb: Night, hazzoura: Hazzoura, autobus: Autobus, saraha: Saraha, seenjeem: SeenJeem, kelmaser: KelmaSer };
+const IMPL = { mafia: Night, dheeb: Night, hazzoura: Hazzoura, autobus: Autobus, saraha: Saraha, seenjeem: SeenJeem, kelmaser: KelmaSer, custom: Custom };
 
 export { GameError };
 export const MAX_PLAYERS = 20;
@@ -110,6 +111,13 @@ export const GAMES = {
 
 export function chooseGame(room, host, gameId) {
   needHost(room, host);
+  if (typeof gameId === "string" && gameId.startsWith("c_")) { // a game made from a video
+    const c = Custom.get(gameId);
+    if (!c) fail("لعبة غير معروفة");
+    if (room.players.length < c.def.minPlayers) fail(`تحتاج ${c.def.minPlayers} لاعبين على الأقل`);
+    room.game = { gameId: "custom", customId: c.id, phase: "howto", ids: room.players.map((p) => p.id), understood: [] };
+    return;
+  }
   const g = Object.hasOwn(GAMES, gameId) ? GAMES[gameId] : null;
   if (!g) fail("لعبة غير معروفة");
   if (!g.ready) fail("هذي اللعبة قريباً");
@@ -256,6 +264,7 @@ export function view(room, p) {
 
 function gameView(g, p, host) {
   const v = { gameId: g.gameId, phase: g.phase, playing: g.ids.includes(p.id), ids: g.ids };
+  if (g.gameId === "custom") v.info = Custom.get(g.customId) && Custom.publicList().find((x) => x.id === g.customId);
   if (g.phase === "howto") return { ...v, understood: g.understood };
   if (g.gameId !== "outsider") return { ...v, ...IMPL[g.gameId].view(g, p, host) };
   const me = p.id === g.outsiderId;

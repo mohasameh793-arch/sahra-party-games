@@ -16,3 +16,4 @@ app/web-build/
 *.key
 .env*.local
 *agentbarehandsstatestate*
+server/data/

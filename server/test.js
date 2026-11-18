@@ -30,7 +30,7 @@ for (const p of room.players) {
 for (const p of room.players) L.gameAction(room, p, { type: "seen" });
 assert.equal(g.phase, "questions");
 const byId = (id) => room.players.find((p) => p.id === id);
-assert.throws(() => L.gameAction(room, byId(g.turns[0][1]) === host ? a : byId(g.turns[0][1]), { type: "nextTurn" }), /دورك/);
+assert.throws(() => L.gameAction(room, room.players.find((p) => p.id !== g.turns[0][0] && p !== host), { type: "nextTurn" }), /دورك/);
 while (g.phase === "questions") L.gameAction(room, byId(g.turns[g.turn][0]), { type: "nextTurn" });
 assert.equal(g.phase, "vote");
 
@@ -145,7 +145,7 @@ function quick(gameId, n) {
   assert.equal(g.phase, "ask", "early timeup ignored");
   assert.throws(() => L.gameAction(room, ps[1], { type: "answer", text: "x" }), /خلاص/);
   L.gameAction(room, ps[2], { type: "answer", text: "غلط أكيد" });
-  L.gameAction(room, h, { type: "answer", text: "ال" + right });
+  L.gameAction(room, h, { type: "answer", text: "ال" + right.replace(/^ال/, "") });
   assert.equal(g.phase, "reveal");
   assert.deepEqual([ps[1], ps[2], h].map((p) => g.points[p.id] || 0), [3, 0, 2]);
   for (let i = 0; i < 9; i++) { L.gameAction(room, h, { type: "next" }); L.gameAction(room, h, { type: "next" }); }
@@ -161,7 +161,7 @@ function quick(gameId, n) {
   assert.throws(() => L.gameAction(room, h, { type: "stop" }), /الخانات/);
   L.gameAction(room, h, { type: "save", answers: full("مشترك") });
   L.gameAction(room, ps[1], { type: "save", answers: { ...full("مشترك"), food: L1 + "تاني" } });
-  L.gameAction(room, ps[2], { type: "save", answers: { boy: "زززز" + L1, girl: L1 + "فيك" } });
+  L.gameAction(room, ps[2], { type: "save", answers: { boy: (L1 === "ب" ? "ت" : "ب") + "زززز", girl: L1 + "فيك" } });
   L.gameAction(room, h, { type: "stop" });
   assert.ok(g.stopAt);
   L.gameAction(room, h, { type: "score" }); // host moves to review

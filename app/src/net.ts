@@ -22,7 +22,10 @@ export type RoomState = {
   game?: any;
 };
 
+export type CustomGame = { id: string; category: "saudi" | "egypt"; name: string; line: string; steps: string[]; minPlayers: number; mechanic: string };
+
 let state: RoomState | null = null;
+let customGames: CustomGame[] = [];
 let kicked = false;
 const listeners = new Set<() => void>();
 const notify = () => listeners.forEach((l) => l());
@@ -35,13 +38,15 @@ socket.on("connect", async () => {
   const res = await send("resume", JSON.parse(saved));
   if (res.error) { await AsyncStorage.removeItem(KEY); state = null; notify(); }
 });
+socket.on("customGames", (list: CustomGame[]) => { customGames = list; notify(); });
+socket.on("connect", async () => { const r = await send("listCustom"); if (r.games) { customGames = r.games; notify(); } });
 socket.on("disconnect", notify);
 socket.on("connect", notify);
 
-export function send(event: string, data: object = {}): Promise<{ ok?: true; error?: string; [k: string]: any }> {
+export function send(event: string, data: object = {}, timeoutMs = 8000): Promise<{ ok?: true; error?: string; [k: string]: any }> {
   return new Promise((resolve) => {
     if (!socket.connected) return resolve({ error: "ما فيه اتصال، تأكد من النت" });
-    socket.timeout(8000).emit(event, data, (err: unknown, res: any) => resolve(err ? { error: "السيرفر ما رد، جرّب مرة ثانية" } : res));
+    socket.timeout(timeoutMs).emit(event, data, (err: unknown, res: any) => resolve(err ? { error: "السيرفر ما رد، جرّب مرة ثانية" } : res));
   });
 }
 
@@ -66,5 +71,5 @@ export function useRoom() {
     listeners.add(l);
     return () => { listeners.delete(l); };
   }, []);
-  return { state, online: socket.connected, kicked };
+  return { state, online: socket.connected, kicked, customGames };
 }

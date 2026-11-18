@@ -4,9 +4,9 @@
 Arabic party-games app for friends. The host creates a room → 4-digit code → friends type it → the host accepts each one → the host picks a category (Saudi / Egyptian) and a game → every phone shows a "how to play" card → the game runs, with each phone getting only its own secret.
 - Android = real APK (not built yet). iPhone = home-screen web app (Safari → Share → Add to Home Screen; full screen, own icon). The user won't pay Apple's $99/yr.
 - Arabic only (Saudi dialect in Saudi games, Egyptian in Egyptian games). Built-in voice for "everyone at home" mode is planned (not built).
-- **Works now (6 of 8 games):** rooms, code, join requests, accept/reject/kick, host hand-over, reconnect after refresh, how-to cards for all 8 games; playable: **برا السالفة**, **الذيب**, **حزورة**, **المافيا** (Saudi) and **أتوبيس كومبليت**, **صراحة** (Egyptian).
+- **Works now (6 of 8 games):** rooms, code, join requests, accept/reject/kick, host hand-over, reconnect after refresh, how-to cards for all 8 games; playable (all 8): **برا السالفة**, **الذيب**, **حزورة**, **المافيا**, **سين جيم** (Saudi) and **أتوبيس كومبليت**, **صراحة**, **كلمة سر** (Egyptian).
 - **LIVE:** https://mohasameh793-arch.github.io/sahra-party-games/ (app, GitHub Pages) → game server https://158-101-253-75.sslip.io (Oracle). Full game verified over the internet 2026-11-18.
-- **Not done:** سين جيم, كلمة سر (need question banks, show "قريباً"); voice; Android APK build.
+- **Not done:** voice for "everyone at home" mode.
 
 ## 2. Where everything lives
 - `C:\Users\Majesty\Desktop\party_games_app\`
@@ -74,3 +74,7 @@ On whatsapp-agent VM: nodejs 18 (apt) + Caddy 2.11 (official apt repo). Server c
 Opened TCP 80,443 from 0.0.0.0/0 in Oracle VCN `vcn-20260906-2236` → Default Security List (done through the user's Chrome via cua-driver; user typed the password). Caddy got its certificate; https://158-101-253-75.sslip.io answers. Played a full برا السالفة round from the GitHub Pages app with 2 bots connecting over the internet.
 ### 2026-11-18 — المافيا moved to Saudi
 User: Mafia is a Saudi game, not Egyptian. Moved it to the Saudi category (content.ts + server GAMES), rewrote its how-to, roles and narration in Saudi dialect, and gave it the Sadu red look (Night.tsx cat = saudi).
+### 2026-11-18 — سين جيم + كلمة سر (all 8 games)
+`server/seenjeem.js` (2 teams via `splitTeams`, board 6 of 8 categories × 200/400/600 from `SEENJEEM` in words.js, pick (+الحفرة), helpers friend +30 s / two answers, pass = steal, answer reaches phones only after reveal, host judges turn/other/none, pit subtracts from the other team) and `server/kelmaser.js` (2 teams, one giver per team sees the word, rotating givers, clue n = 11-n points, miss/foul pass the turn, first to 50). Screens `SeenJeem.tsx`, `KelmaSer.tsx`. Self-checks added; full games played with bots. Deployed to Oracle + Pages.
+### 2026-11-18 — Android APK
+`npx expo prebuild -p android` (android/ is git-ignored, regenerated) → `android/local.properties` sdk.dir → `gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a` with JAVA_HOME = JDK 21 (`C:/Program Files/Microsoft/jdk-21.0.11.10-hotspot`), ANDROID_HOME = `%LOCALAPPDATA%/Android/Sdk`, EXPO_PUBLIC_NATIVE_SERVER_URL=https://158-101-253-75.sslip.io. Release is signed with the template's debug key (fine for sideloading, not for Play Store). Log: `out/gradle_build.log`.

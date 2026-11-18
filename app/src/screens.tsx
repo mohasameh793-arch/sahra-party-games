@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { CATEGORIES, Category, GAMES, gameById } from "./content";
-import { enter, leave, RoomState, send } from "./net";
+import { enter, leave, RoomState, send, useRoom } from "./net";
 import { accent, Band, Body, Btn, C, Card, ErrorLine, F, Field, Row, Screen, Title } from "./ui";
 
 export function Home({ kicked }: { kicked: boolean }) {
@@ -64,7 +64,13 @@ export function Lobby({ state }: { state: RoomState }) {
   const [peek, setPeek] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const host = state.you.isHost;
+  const { customGames } = useRoom();
   const call = async (event: string, data: object) => { setErr(null); const r = await send(event, data); if (r.error) setErr(r.error); };
+  // Built-in games first, then the ones people made from videos (shared by everyone).
+  const list = [
+    ...GAMES.filter((g) => g.category === cat),
+    ...customGames.filter((c) => c.category === cat).map((c) => ({ ...c, players: `${c.minPlayers}+ لاعب`, ready: true, custom: true })),
+  ];
 
   return (
     <Screen>
@@ -116,13 +122,14 @@ export function Lobby({ state }: { state: RoomState }) {
         ))}
       </Row>
 
-      {GAMES.filter((g) => g.category === cat).map((g) => (
+      {list.map((g) => (
         <Card key={g.id} style={{ borderRightWidth: 4, borderRightColor: g.ready ? accent(cat) : C.line }}>
           <Row style={{ justifyContent: "space-between" }}>
             <Title size={22}>{g.name}</Title>
             <Text style={st.players}>{g.ready ? g.players : "قريباً"}</Text>
           </Row>
           <Body muted>{g.line}</Body>
+          {"custom" in g && <Text style={st.made}>انضافت من فيديو</Text>}
           {peek === g.id && g.steps.map((t, i) => <Body key={i}>{`${i + 1}. ${t}`}</Body>)}
           <Row>
             <Btn label={peek === g.id ? "إخفاء الشرح" : "كيف تنلعب؟"} kind="ghost" onPress={() => setPeek(peek === g.id ? null : g.id)} style={{ flex: 1 }} />
@@ -131,14 +138,39 @@ export function Lobby({ state }: { state: RoomState }) {
         </Card>
       ))}
       {!host && <Body muted>المضيف يختار اللعبة.</Body>}
+      <MakeGame category={cat} />
       <Btn label="اطلع من الغرفة" kind="danger" onPress={leave} />
     </Screen>
   );
 }
 
+/** "Make your own game": paste a video link; the server's AI turns it into a game for everyone. */
+function MakeGame({ category }: { category: Category }) {
+  const [url, setUrl] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const submit = async () => {
+    setBusy(true); setMsg({ ok: true, text: "الذكاء الاصطناعي يشاهد الفيديو ويطلع القوانين… ممكن ياخذ دقيقتين" });
+    const r = await send("submitGame", { url, category }, 240_000);
+    setBusy(false);
+    if (r.ok) { setUrl(""); setMsg({ ok: true, text: `انضافت «${r.game.name}» للكل! تلقونها فوق.` }); }
+    else setMsg({ ok: false, text: r.error ?? "صار خطأ" });
+  };
+  return (
+    <Card style={{ borderStyle: "dashed", borderColor: accent(category) }}>
+      <Title size={20}>سوّ لعبتك</Title>
+      <Body muted>عندك لعبة مشهورة مو موجودة؟ حط رابط فيديو يشرحها (يوتيوب، انستقرام، تيك توك، X، فيسبوك، سناب) وتنضاف للكل.</Body>
+      <Field label="رابط الفيديو" value={url} onChangeText={setUrl} placeholder="https://..." autoCapitalize="none" autoCorrect={false}
+        keyboardType="url" inputMode="url" maxLength={400} style={{ textAlign: "left" }} editable={!busy} />
+      <Btn label={busy ? "جاري التحليل…" : "أضف اللعبة"} color={accent(category)} disabled={busy || url.trim().length < 12} onPress={submit} />
+      {msg && <Text accessibilityLiveRegion="polite" style={[st.made, { color: msg.ok ? C.wool : "#ff8a8f" }]}>{msg.text}</Text>}
+    </Card>
+  );
+}
+
 export function HowTo({ state }: { state: RoomState }) {
   const g = state.game;
-  const info = gameById(g.gameId);
+  const info: { name: string; line: string; steps: string[]; category: Category } = g.gameId === "custom" && g.info ? g.info : gameById(g.gameId);
   const done: string[] = g.understood;
   const me = done.includes(state.you.id);
   const waitingFor = state.players?.filter((p) => g.ids.includes(p.id) && !done.includes(p.id)).map((p) => p.name) ?? [];
@@ -172,5 +204,6 @@ const st = StyleSheet.create({
   tabNote: { fontFamily: F.body, color: C.muted, fontSize: 13, textAlign: "right" },
   players: { fontFamily: F.bold, color: C.muted, fontSize: 13 },
   score: { fontFamily: F.head, color: C.amber, fontSize: 20 },
+  made: { fontFamily: F.bold, color: C.amber, fontSize: 13, textAlign: "right" },
   step: { fontFamily: F.head, fontSize: 24, width: 26, textAlign: "center" },
 });

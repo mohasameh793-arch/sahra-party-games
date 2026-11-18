@@ -12,6 +12,7 @@ import { Autobus } from "./src/Autobus";
 import { Saraha } from "./src/Saraha";
 import { SeenJeem } from "./src/SeenJeem";
 import { KelmaSer } from "./src/KelmaSer";
+import { Custom } from "./src/Custom";
 import { C, F } from "./src/ui";
 
 export default function App() {
@@ -39,6 +40,7 @@ export default function App() {
   else if (state.game.gameId === "saraha") screen = <Saraha state={state} />;
   else if (state.game.gameId === "seenjeem") screen = <SeenJeem state={state} />;
   else if (state.game.gameId === "kelmaser") screen = <KelmaSer state={state} />;
+  else if (state.game.gameId === "custom") screen = <Custom state={state} />;
   else screen = <Night state={state} />;
 
   return (

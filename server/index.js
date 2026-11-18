@@ -5,6 +5,7 @@ import { extname, join, normalize, dirname, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Server } from "socket.io";
 import * as L from "./logic.js";
+import * as Custom from "./customgame.js";
 
 const PORT = Number(process.env.PORT || 3005);
 const TRUST_PROXY = process.env.TRUST_PROXY === "1";
@@ -45,8 +46,12 @@ function limited(ip, max = 20) {
   return h.length > max;
 }
 
+// Audit fix: one room's broken state must never take the whole server down.
 function broadcast(room) {
-  for (const p of [...room.players, ...room.pending]) if (p.socketId) io.to(p.socketId).emit("state", L.view(room, p));
+  for (const p of [...room.players, ...room.pending]) {
+    if (!p.socketId) continue;
+    try { io.to(p.socketId).emit("state", L.view(room, p)); } catch (e) { console.error("view failed", room.code, e?.name); }
+  }
 }
 
 /**
@@ -133,6 +138,21 @@ io.on("connection", (socket) => {
   act("endGame", (room, p) => L.endGame(room, p));
   act("action", (room, p, d) => L.gameAction(room, p, d));
 
+  // Games made from videos: everyone can list them; only a player inside a room can submit a link.
+  on("listCustom", () => ({ games: Custom.publicList() }), { limit: true });
+  socket.on("submitGame", async (data, ack) => {
+    const reply = typeof ack === "function" ? ack : () => {};
+    try {
+      const { room, p } = current();
+      if (!room.players.includes(p)) throw new L.GameError("انتظر المضيف يقبلك"); // accepted players only (audit fix)
+      const r = await Custom.submit({ url: data?.url, category: data?.category, ip });
+      if (r.ok) io.emit("customGames", Custom.publicList());
+      reply(r.ok ? { ok: true, game: r.game } : { error: r.error });
+    } catch (e) {
+      reply({ error: e instanceof L.GameError ? e.message : "صار خطأ، جرّب مرة ثانية" });
+    }
+  });
+
   on("leave", () => {
     const { room, p } = current();
     L.removePlayer(room, p);
@@ -140,7 +160,7 @@ io.on("connection", (socket) => {
     broadcast(room);
   });
 
-  socket.on("disconnect", () => release(socket));
+  socket.on("disconnect", () => { try { release(socket); } catch (e) { console.error("release failed", e?.name); } });
 });
 
 // Close rooms nobody has been connected to for 15 minutes.
