@@ -100,7 +100,7 @@ export const GAMES = {
   dheeb: { category: "saudi", min: 5, ready: true },
   seenjeem: { category: "saudi", min: 2, ready: false },
   hazzoura: { category: "saudi", min: 2, ready: true },
-  mafia: { category: "egypt", min: 5, ready: true },
+  mafia: { category: "saudi", min: 5, ready: true },
   autobus: { category: "egypt", min: 2, ready: true },
   kelmaser: { category: "egypt", min: 4, ready: false },
   saraha: { category: "egypt", min: 3, ready: true },

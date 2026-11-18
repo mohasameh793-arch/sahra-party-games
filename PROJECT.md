@@ -4,7 +4,7 @@
 Arabic party-games app for friends. The host creates a room → 4-digit code → friends type it → the host accepts each one → the host picks a category (Saudi / Egyptian) and a game → every phone shows a "how to play" card → the game runs, with each phone getting only its own secret.
 - Android = real APK (not built yet). iPhone = home-screen web app (Safari → Share → Add to Home Screen; full screen, own icon). The user won't pay Apple's $99/yr.
 - Arabic only (Saudi dialect in Saudi games, Egyptian in Egyptian games). Built-in voice for "everyone at home" mode is planned (not built).
-- **Works now (6 of 8 games):** rooms, code, join requests, accept/reject/kick, host hand-over, reconnect after refresh, how-to cards for all 8 games; playable: **برا السالفة**, **الذيب**, **حزورة** (Saudi) and **المافيا**, **أتوبيس كومبليت**, **صراحة** (Egyptian).
+- **Works now (6 of 8 games):** rooms, code, join requests, accept/reject/kick, host hand-over, reconnect after refresh, how-to cards for all 8 games; playable: **برا السالفة**, **الذيب**, **حزورة**, **المافيا** (Saudi) and **أتوبيس كومبليت**, **صراحة** (Egyptian).
 - **LIVE:** https://mohasameh793-arch.github.io/sahra-party-games/ (app, GitHub Pages) → game server https://158-101-253-75.sslip.io (Oracle). Full game verified over the internet 2026-11-18.
 - **Not done:** سين جيم, كلمة سر (need question banks, show "قريباً"); voice; Android APK build.
 
@@ -72,3 +72,5 @@ Commit author switched to GitHub no-reply email (history rewritten with user's O
 On whatsapp-agent VM: nodejs 18 (apt) + Caddy 2.11 (official apt repo). Server copied to `~/sahra/server` (tar over ssh, incl. node_modules). systemd `sahra-game.service` (PORT=3005, HOST=127.0.0.1, TRUST_PROXY=1, MemoryMax=200M). `/etc/caddy/Caddyfile`: `158-101-253-75.sslip.io { reverse_proxy 127.0.0.1:3005 }` (Caddy replaces client X-Forwarded-For, so TRUST_PROXY is safe). iptables 80/443 opened and saved to /etc/iptables/rules.v4. BLOCKED: Oracle VCN security list must allow TCP 80+443 from 0.0.0.0/0 (user, console). Update server later: `tar -czf - server | ssh ... 'tar -xzf - -C ~/sahra' && sudo systemctl restart sahra-game`.
 ### 2026-11-18 — live
 Opened TCP 80,443 from 0.0.0.0/0 in Oracle VCN `vcn-20260906-2236` → Default Security List (done through the user's Chrome via cua-driver; user typed the password). Caddy got its certificate; https://158-101-253-75.sslip.io answers. Played a full برا السالفة round from the GitHub Pages app with 2 bots connecting over the internet.
+### 2026-11-18 — المافيا moved to Saudi
+User: Mafia is a Saudi game, not Egyptian. Moved it to the Saudi category (content.ts + server GAMES), rewrote its how-to, roles and narration in Saudi dialect, and gave it the Sadu red look (Night.tsx cat = saudi).

@@ -12,7 +12,7 @@ export function Night({ state }: { state: RoomState }) {
   const g = state.game;
   const gameId = g.gameId as "mafia" | "dheeb";
   const T = TALK[gameId];
-  const cat = gameId === "mafia" ? "egypt" : "saudi";
+  const cat = "saudi"; // both night games (المافيا, الذيب) are in the Saudi category
   const color = accent(cat);
   const meId = state.you.id;
   const host = state.you.isHost;
