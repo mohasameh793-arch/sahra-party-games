@@ -5,7 +5,8 @@ Arabic party-games app for friends. The host creates a room → 4-digit code →
 - Android = real APK (not built yet). iPhone = home-screen web app (Safari → Share → Add to Home Screen; full screen, own icon). The user won't pay Apple's $99/yr.
 - Arabic only (Saudi dialect in Saudi games, Egyptian in Egyptian games). Built-in voice for "everyone at home" mode is planned (not built).
 - **Works now (6 of 8 games):** rooms, code, join requests, accept/reject/kick, host hand-over, reconnect after refresh, how-to cards for all 8 games; playable: **برا السالفة**, **الذيب**, **حزورة** (Saudi) and **المافيا**, **أتوبيس كومبليت**, **صراحة** (Egyptian).
-- **Not done:** سين جيم, كلمة سر (need question banks, show "قريباً"); voice; Android APK build; public hosting.
+- **LIVE:** https://mohasameh793-arch.github.io/sahra-party-games/ (app, GitHub Pages) → game server https://158-101-253-75.sslip.io (Oracle). Full game verified over the internet 2026-11-18.
+- **Not done:** سين جيم, كلمة سر (need question banks, show "قريباً"); voice; Android APK build.
 
 ## 2. Where everything lives
 - `C:\Users\Majesty\Desktop\party_games_app\`
@@ -65,3 +66,9 @@ Added `nightgame.js` + `Night.tsx`. Server self-check covers doctor save, detect
 Added the three games (server modules + screens + self-checks), played each in the browser with bots (`out/design_3games.png`). Riddle answers now show the correct spelling first.
 ### 2026-11-17 — security audit (quick profile)
 2 hunters + 1 critic + 2 verifiers, source-only (no OS sandbox on Windows; skill validators can't run here, so the run is marked incomplete). Confirmed (medium): rooms never released when one socket creates/joins again → room-code exhaustion; fixed with `release()` in index.js. Needs validation: rate limit trusted client X-Forwarded-For; now only trusted with `TRUST_PROXY=1` (set it ONLY behind a proxy that overwrites the header). Hardening applied: saraha index check, decide order, Object.hasOwn. Deferred: no throttle on in-game events. `node server/test_socket.mjs` passes.
+### 2026-11-17 — GitHub + Pages
+Commit author switched to GitHub no-reply email (history rewritten with user's OK). Repo made PUBLIC (user's choice). `.github/workflows/pages.yml` builds the web app (EXPO_BASE_URL=/sahra-party-games, EXPO_PUBLIC_SERVER_URL=https://158-101-253-75.sslip.io) and deploys to https://mohasameh793-arch.github.io/sahra-party-games/ on every push to main. `app/app.config.js` sets baseUrl from env. NOT DONE: Oracle game server (install Node+Caddy, systemd service with HOST=127.0.0.1 TRUST_PROXY=1, iptables 80/443, user opens 80/443 in Oracle console). Until then the Pages app shows "disconnected".
+### 2026-11-17 — Oracle game server installed
+On whatsapp-agent VM: nodejs 18 (apt) + Caddy 2.11 (official apt repo). Server copied to `~/sahra/server` (tar over ssh, incl. node_modules). systemd `sahra-game.service` (PORT=3005, HOST=127.0.0.1, TRUST_PROXY=1, MemoryMax=200M). `/etc/caddy/Caddyfile`: `158-101-253-75.sslip.io { reverse_proxy 127.0.0.1:3005 }` (Caddy replaces client X-Forwarded-For, so TRUST_PROXY is safe). iptables 80/443 opened and saved to /etc/iptables/rules.v4. BLOCKED: Oracle VCN security list must allow TCP 80+443 from 0.0.0.0/0 (user, console). Update server later: `tar -czf - server | ssh ... 'tar -xzf - -C ~/sahra' && sudo systemctl restart sahra-game`.
+### 2026-11-18 — live
+Opened TCP 80,443 from 0.0.0.0/0 in Oracle VCN `vcn-20260906-2236` → Default Security List (done through the user's Chrome via cua-driver; user typed the password). Caddy got its certificate; https://158-101-253-75.sslip.io answers. Played a full برا السالفة round from the GitHub Pages app with 2 bots connecting over the internet.
